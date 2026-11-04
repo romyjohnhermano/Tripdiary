@@ -30,7 +30,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
     <>
       <Nav />
       <ChatRefresh />
-      <main>
+      <div className="page">
         <div className="page-head">
           <Link href={`/profile/${otherId}`} style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <Avatar name={other.username} pic={other.profile_pic} /> <h2 style={{ margin: 0 }}>{other.username}</h2>
@@ -62,11 +62,11 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         ) : (
           <form action={sendMessage} className="comment-form">
             <input type="hidden" name="to" value={otherId} />
-            <input name="text" required maxLength={2000} placeholder="Write a message…" autoComplete="off" />
-            <button className="button">Send</button>
+            <input name="text" type="text" required maxLength={2000} placeholder="Write a message…" autoComplete="off" />
+            <button name="send" className="button">Send</button>
           </form>
         )}
-      </main>
+      </div>
     </>
   );
 }

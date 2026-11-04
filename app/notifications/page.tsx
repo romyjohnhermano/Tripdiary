@@ -24,7 +24,7 @@ export default async function NotificationsPage() {
   return (
     <>
       <Nav />
-      <main>
+      <div className="page">
         <h1>Notifications</h1>
         <p className="muted">Reactions, comments, replies and reposts of your posts, and updates from the admin.</p>
         <div className="card">
@@ -66,7 +66,7 @@ export default async function NotificationsPage() {
             );
           })}
         </div>
-      </main>
+      </div>
     </>
   );
 }

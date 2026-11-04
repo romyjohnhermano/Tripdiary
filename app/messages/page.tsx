@@ -27,7 +27,7 @@ export default async function MessagesPage() {
   return (
     <>
       <Nav />
-      <main>
+      <div className="page">
         <h1>Messages</h1>
         <div className="card">
           {convos.size === 0 && <p className="muted">No conversations yet. Pick someone below to say hi.</p>}
@@ -54,7 +54,7 @@ export default async function MessagesPage() {
             <Link key={p.student_id} href={`/messages/${p.student_id}`} className="list-row"><Avatar name={p.username} pic={p.profile_pic} size="sm" /> {p.username}</Link>
           ))}
         </div>
-      </main>
+      </div>
     </>
   );
 }
