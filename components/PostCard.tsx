@@ -13,7 +13,7 @@ function CommentForm({ postId, parentId, back }: { postId: number; parentId?: nu
       {parentId && <input type="hidden" name="parentId" value={parentId} />}
       <input type="hidden" name="back" value={back} />
       <input name="text" required maxLength={1000} placeholder={parentId ? "Write a reply…" : "Write something kind…"} />
-      <button className="button small">{parentId ? "Reply" : "Comment"}</button>
+      <button name="add_comment" type="submit">{parentId ? "Reply" : "Send"}</button>
     </form>
   );
 }
@@ -23,26 +23,39 @@ function Comment({ c, post, meId, back, reply = false }: { c: CommentT; post: Po
   const anon = post.is_anonymous && c.student_id === post.student_id;
   const mine = meId === c.student_id;
   return (
-    <div className={`comment${reply ? " reply" : ""}`}>
+    <div className="comment">
       <Avatar name={anon ? null : c.username} pic={anon ? null : c.profile_pic} size="sm" />
       <div className="comment-body">
         <div className="comment-head">
           {anon ? <b>Anonymous</b> : <Link href={`/profile/${c.student_id}`}><b>{c.username}</b></Link>}
-          <span className="muted small">{timeAgo(c.created_at)}</span>
+          <span className="post-date small">{timeAgo(c.created_at)}</span>
         </div>
-        {c.hidden && <p className="notice small">Hidden after several reports. Only you can see this until an admin decides.</p>}
+        {c.hidden && <p className="hidden-note">Hidden after several reports. Only you can see this until an admin decides.</p>}
         <p>{c.text}</p>
         {meId && (
-          <div className="actions small">
+          <div className="actions">
             {mine ? (
-              <form action={deleteOwn}><input type="hidden" name="commentId" value={c.comment_id} /><input type="hidden" name="back" value={back} /><button className="link">Delete</button></form>
+              <form action={deleteOwn}>
+                <input type="hidden" name="commentId" value={c.comment_id} />
+                <input type="hidden" name="back" value={back} />
+                <button type="submit" className="link-button">Delete</button>
+              </form>
             ) : (
               <ReportForm postId={post.post_id} commentId={c.comment_id} back={back} done={c.reported_by_me} />
             )}
-            {!reply && <details><summary>Reply</summary><CommentForm postId={post.post_id} parentId={c.comment_id} back={back} /></details>}
           </div>
         )}
-        {c.replies.map((r) => <Comment key={r.comment_id} c={r} post={post} meId={meId} back={back} reply />)}
+        {!reply && meId && (
+          <details className="reply-box">
+            <summary>Reply</summary>
+            <CommentForm postId={post.post_id} parentId={c.comment_id} back={back} />
+          </details>
+        )}
+        {c.replies.length > 0 && (
+          <div className="replies">
+            {c.replies.map((r) => <Comment key={r.comment_id} c={r} post={post} meId={meId} back={back} reply />)}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -53,39 +66,51 @@ export default function PostCard({ post, meId, back }: { post: PostT; meId: numb
   const anon = post.is_anonymous;
   const name = anon || !post.username ? null : post.username;
   const here = `${back}#post-${post.post_id}`;
+  const feelingColor = post.feeling && post.feeling in FEELINGS ? FEELINGS[post.feeling] : null;
+
   return (
-    <article className="card" id={`post-${post.post_id}`}>
-      <div className="post-head">
+    <article
+      className="post-card"
+      id={`post-${post.post_id}`}
+      style={feelingColor ? { borderTop: `4px solid ${feelingColor}` } : undefined}
+    >
+      <div className="post-meta">
         <Avatar name={name} pic={post.profile_pic} />
-        <div>
-          {name && post.student_id ? <Link href={`/profile/${post.student_id}`}><b>{name}</b></Link> : <b>Anonymous</b>}
-          {anon && mine && <span className="muted small"> (only you know this is you)</span>}
-          <div className="muted small">{timeAgo(post.created_at)}</div>
-        </div>
-        {post.feeling && post.feeling in FEELINGS && (
-          <span className="feeling" style={{ background: FEELINGS[post.feeling] }}>feeling {post.feeling}</span>
+        {name && post.student_id ? <Link href={`/profile/${post.student_id}`}><strong>{name}</strong></Link> : <strong>Anonymous</strong>}
+        {anon && mine && <span className="post-date"> (only you know this is you)</span>}
+        {feelingColor && post.feeling && (
+          <>
+            <span>is feeling</span>
+            <span className="feeling-tag" style={{ background: feelingColor }}>{post.feeling}</span>
+          </>
         )}
+        <span className="post-date">· {timeAgo(post.created_at)}</span>
       </div>
 
-      {post.hidden && <p className="notice small">Hidden after several reports. Only you can see this until an admin decides.</p>}
+      {post.hidden && <p className="hidden-note">Hidden after several reports. Only you can see this until an admin decides.</p>}
       {post.description && <p className="post-text">{censor(post.description)}</p>}
-      {post.image && <img className="post-img" src={imgUrl(post.image)!} alt="" />}
+      {post.image && <img className="post-image" src={imgUrl(post.image)!} alt="" />}
 
       {needsSupport(post.description) && (
         <div className="hotline">
-          <b>You are not alone.</b> If you are thinking about hurting yourself, please reach out:
-          <ul>{Object.entries(CRISIS_HOTLINES).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
+          <b>You are not alone.</b> If you or someone here is thinking about self-harm, please talk to someone now. It&apos;s free, private and open 24/7:
+          <ul>{Object.entries(CRISIS_HOTLINES).map(([k, v]) => <li key={k}>{k}: <b>{v}</b></li>)}</ul>
+          <span>You can also talk to your school guidance counselor or someone you trust.</span>
         </div>
       )}
 
-      <div className="actions">
+      <div className="reactions">
         {Object.entries(REACTIONS).map(([type, r]) => (
           <form action={react} key={type}>
             <input type="hidden" name="postId" value={post.post_id} />
             <input type="hidden" name="type" value={type} />
             <input type="hidden" name="back" value={back} />
-            <button className={`pill${post.mine === type ? " on" : ""}`} disabled={!meId} title={meId ? r.label : "Log in to react"}>
-              {r.emoji} {r.label} {post.reactions[type] > 0 && <b>{post.reactions[type]}</b>}
+            <button
+              className={`react react-${type}${post.mine === type ? " reacted" : ""}`}
+              disabled={!meId}
+              title={meId ? r.label : "Log in to react"}
+            >
+              {r.emoji} {r.label} <span>{post.reactions[type] ?? 0}</span>
             </button>
           </form>
         ))}
@@ -93,17 +118,29 @@ export default function PostCard({ post, meId, back }: { post: PostT; meId: numb
           <form action={toggleRepost}>
             <input type="hidden" name="postId" value={post.post_id} />
             <input type="hidden" name="back" value={back} />
-            <button className={`pill${post.reposted_by_me ? " on" : ""}`} disabled={!meId}>🔁 Repost {post.repost_count > 0 && <b>{post.repost_count}</b>}</button>
+            <button className={`repost${post.reposted_by_me ? " reacted" : ""}`} disabled={!meId}>
+              🔁 <span className="repost-label">Repost</span>
+              {post.repost_count > 0 && <span className="repost-count">{post.repost_count}</span>}
+            </button>
           </form>
         )}
-        {meId && (mine ? (
-          <form action={deleteOwn}><input type="hidden" name="postId" value={post.post_id} /><input type="hidden" name="back" value={back} /><button className="link">Delete</button></form>
-        ) : <ReportForm postId={post.post_id} back={here} done={post.reported_by_me} />)}
       </div>
+
+      {meId && (mine ? (
+        <form action={deleteOwn}>
+          <input type="hidden" name="postId" value={post.post_id} />
+          <input type="hidden" name="back" value={back} />
+          <input type="submit" name="delete_post" value="Delete post" />
+        </form>
+      ) : (
+        <div className="actions">
+          <ReportForm postId={post.post_id} back={here} done={post.reported_by_me} />
+        </div>
+      ))}
 
       <div className="comments">
         {post.comments.map((c) => <Comment key={c.comment_id} c={c} post={post} meId={meId} back={here} />)}
-        {meId ? <CommentForm postId={post.post_id} back={here} /> : <p className="muted small"><Link href="/login">Log in</Link> to comment.</p>}
+        {meId ? <CommentForm postId={post.post_id} back={here} /> : <p className="post-date"><Link href="/login">Log in</Link> to comment.</p>}
       </div>
     </article>
   );

@@ -12,14 +12,14 @@ export default async function FeedPage() {
   return (
     <>
       <Nav />
-      <main>
+      <div className="page">
         <div className="page-head">
           <div><h1>Community</h1><p className="muted">A safe place to share. Be kind — everyone here is going through something.</p></div>
           <Link href={me ? "/create" : "/login"} className="button">＋ Share something</Link>
         </div>
         {posts.length === 0 && <p className="muted">No posts yet. <Link href="/create">Be the first to share.</Link></p>}
         {posts.map((p) => <PostCard key={p.post_id} post={p} meId={me?.id ?? null} back="/feed" />)}
-      </main>
+      </div>
     </>
   );
 }

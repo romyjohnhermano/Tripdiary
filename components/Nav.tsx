@@ -4,6 +4,9 @@ import { db } from "@/lib/db";
 import { getMe } from "@/lib/session";
 import { logout } from "@/app/actions";
 import Flash from "./Flash";
+import ThemeMenu from "./ThemeMenu";
+import NavLinks, { type NavItem } from "./NavLinks";
+import { BellIcon, BrandLogo, ChatIcon, HomeIcon, LogoutIcon, LoginIcon, PlusIcon } from "./icons";
 
 export default async function Nav() {
   const me = await getMe();
@@ -15,27 +18,41 @@ export default async function Nav() {
     ]);
     unread = n.count ?? 0; unreadMsgs = m.count ?? 0;
   }
+
+  const items: NavItem[] = me
+    ? [
+        { href: "/feed", label: "Community", icon: <HomeIcon /> },
+        { href: "/create", label: "Create", icon: <PlusIcon /> },
+        { href: "/messages", label: "Messages", icon: <ChatIcon />, badge: unreadMsgs },
+        { href: "/notifications", label: "Notifications", icon: <BellIcon />, badge: unread },
+      ]
+    : [{ href: "/feed", label: "Community", icon: <HomeIcon /> }];
+
   return (
     <>
-      <header className="nav">
-        <Link href="/feed" className="brand">🏡 tripdiary</Link>
-        <nav>
-          <Link href="/feed">Community</Link>
-          {me ? (
-            <>
-              <Link href="/create">Share</Link>
-              <Link href="/messages">Messages{unreadMsgs > 0 && <b className="badge">{unreadMsgs}</b>}</Link>
-              <Link href="/notifications">Notifications{unread > 0 && <b className="badge">{unread}</b>}</Link>
-              <Link href={`/profile/${me.id}`}>{me.username}</Link>
-              <form action={logout}><button className="link">Log out</button></form>
-            </>
-          ) : (
-            <>
-              <Link href="/login">Log in</Link>
-              <Link href="/signup" className="button small">Sign up</Link>
-            </>
-          )}
-        </nav>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <Link href="/feed" className="brand"><BrandLogo /><span>tripdiary</span></Link>
+          <NavLinks items={items} />
+          <div className="usermenu">
+            {me ? (
+              <>
+                <Link href={`/profile/${me.id}`} className="userchip">
+                  <span className="userchip-name">{me.username}</span>
+                </Link>
+                <ThemeMenu />
+                <form action={logout}>
+                  <button type="submit" className="icon-button" aria-label="Log out" title="Log out"><LogoutIcon /></button>
+                </form>
+              </>
+            ) : (
+              <>
+                <ThemeMenu />
+                <Link href="/login" className="icon-button" aria-label="Log in" title="Log in"><LoginIcon /></Link>
+              </>
+            )}
+          </div>
+        </div>
       </header>
       <Suspense fallback={null}><Flash /></Suspense>
     </>
