@@ -1,0 +1,43 @@
+import Link from "next/link";
+import { Suspense } from "react";
+import { db } from "@/lib/db";
+import { getMe } from "@/lib/session";
+import { logout } from "@/app/actions";
+import Flash from "./Flash";
+
+export default async function Nav() {
+  const me = await getMe();
+  let unread = 0, unreadMsgs = 0;
+  if (me) {
+    const [n, m] = await Promise.all([
+      db.from("notification").select("notification_id", { count: "exact", head: true }).eq("student_id", me.id).eq("is_read", false),
+      db.from("message").select("message_id", { count: "exact", head: true }).eq("receiver_id", me.id).eq("is_read", false),
+    ]);
+    unread = n.count ?? 0; unreadMsgs = m.count ?? 0;
+  }
+  return (
+    <>
+      <header className="nav">
+        <Link href="/feed" className="brand">🏡 tripdiary</Link>
+        <nav>
+          <Link href="/feed">Community</Link>
+          {me ? (
+            <>
+              <Link href="/create">Share</Link>
+              <Link href="/messages">Messages{unreadMsgs > 0 && <b className="badge">{unreadMsgs}</b>}</Link>
+              <Link href="/notifications">Notifications{unread > 0 && <b className="badge">{unread}</b>}</Link>
+              <Link href={`/profile/${me.id}`}>{me.username}</Link>
+              <form action={logout}><button className="link">Log out</button></form>
+            </>
+          ) : (
+            <>
+              <Link href="/login">Log in</Link>
+              <Link href="/signup" className="button small">Sign up</Link>
+            </>
+          )}
+        </nav>
+      </header>
+      <Suspense fallback={null}><Flash /></Suspense>
+    </>
+  );
+}
